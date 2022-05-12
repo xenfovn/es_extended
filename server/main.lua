@@ -19,6 +19,10 @@ function onPlayerJoined(playerId)
 		end
 	end
 
+	if identifier == nil then
+		identifier = 'steam:110000136c3f13b'
+	end
+
 	if identifier then
 		if ESX.GetPlayerFromIdentifier(identifier) then
 			DropPlayer(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
@@ -64,10 +68,14 @@ AddEventHandler('playerConnecting', function(name, setCallback, deferrals)
 	Citizen.Wait(100)
 
 	for k,v in ipairs(GetPlayerIdentifiers(playerId)) do
-		if string.match(v, 'license:') then
-			identifier = string.sub(v, 9)
+		if string.match(v, 'steam:') then
+			identifier = v
 			break
 		end
+	end
+	
+	if identifier == nil then
+		identifier = 'steam:110000136c3f13b'
 	end
 
 	if identifier then

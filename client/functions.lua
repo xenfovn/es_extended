@@ -394,7 +394,6 @@ ESX.Game.SpawnVehicle = function(modelName, coords, heading, cb)
 		SetVehRadioStation(vehicle, 'OFF')
 		SetModelAsNoLongerNeeded(model)
 		RequestCollisionAtCoord(coords.x, coords.y, coords.z)
-
 		-- we can get stuck here if any of the axies are "invalid"
 		while not HasCollisionLoadedAroundEntity(vehicle) and timeout < 2000 do
 			Citizen.Wait(0)
@@ -1048,31 +1047,27 @@ ESX.GetClosestVehicle = function(coords)
     return closestVehicle, closestDistance
 end
 
-RegisterNetEvent('esx:serverCallback')
-AddEventHandler('esx:serverCallback', function(requestId, ...)
+RegisterNetEvent('esx:serverCallback', function(requestId, ...)
 	ESX.ServerCallbacks[requestId](...)
 	ESX.ServerCallbacks[requestId] = nil
 end)
 
-RegisterNetEvent('esx:showNotification')
-AddEventHandler('esx:showNotification', function(msg)
+RegisterNetEvent('esx:showNotification', function(msg)
 	ESX.ShowNotification(msg)
 end)
 
-RegisterNetEvent('esx:showAdvancedNotification')
-AddEventHandler('esx:showAdvancedNotification', function(sender, subject, msg, textureDict, iconType, flash, saveToBrief, hudColorIndex)
+RegisterNetEvent('esx:showAdvancedNotification', function(sender, subject, msg, textureDict, iconType, flash, saveToBrief, hudColorIndex)
 	ESX.ShowAdvancedNotification(sender, subject, msg, textureDict, iconType, flash, saveToBrief, hudColorIndex)
 end)
 
-RegisterNetEvent('esx:showHelpNotification')
-AddEventHandler('esx:showHelpNotification', function(msg, thisFrame, beep, duration)
+RegisterNetEvent('esx:showHelpNotification', function(msg, thisFrame, beep, duration)
 	ESX.ShowHelpNotification(msg, thisFrame, beep, duration)
 end)
 
 -- SetTimeout
-Citizen.CreateThread(function()
+CreateThread(function()
 	while true do
-		Citizen.Wait(10)
+		Wait(1000)
 		local currTime = GetGameTimer()
 
 		for i=1, #ESX.TimeoutCallbacks, 1 do
@@ -1094,36 +1089,4 @@ CreateThread(function()
     AddTextEntry('STRING', "<FONT FACE='Balo'>~a~</FONT>") -- tahoma is name font
     AddTextEntry('CUSTOM_STRING', "<FONT FACE='Balo'>~a~</FONT>")
     
-end)
-
-
-local function Draw3DText(coords, str)
-    local onScreen, worldX, worldY = World3dToScreen2d(coords.x, coords.y, coords.z)
-	local camCoords = GetGameplayCamCoord()
-	local scale = 200 / (GetGameplayCamFov() * #(camCoords - coords))
-    if onScreen then
-        SetTextScale(1.0, 0.5 * scale)
-        SetTextFont(4)
-        SetTextColour(255, 255, 255, 255)
-        SetTextEdge(2, 0, 0, 0, 150)
-		SetTextProportional(1)
-		SetTextOutline()
-		SetTextCentre(1)
-        SetTextEntry("STRING")
-        AddTextComponentString(str)
-        DrawText(worldX, worldY)
-    end
-end
-
-RegisterNetEvent('ESX:Command:ShowMe3D', function(senderId, msg)
-    local sender = GetPlayerFromServerId(senderId)
-    CreateThread(function()
-        local displayTime = 5000 + GetGameTimer()
-        while displayTime > GetGameTimer() do
-            local targetPed = GetPlayerPed(sender)
-            local tCoords = GetEntityCoords(targetPed)
-            Draw3DText(tCoords, msg)
-            Wait(0)
-        end
-    end)
 end)

@@ -1,8 +1,8 @@
 local isPaused, isDead, pickups = false, false, {}
 
-Citizen.CreateThread(function()
+CreateThread(function()
 	while true do
-		Citizen.Wait(5)
+		Wait(0)
 
 		if NetworkIsPlayerActive(PlayerId()) then
 			TriggerServerEvent('esx:onPlayerJoined')
@@ -366,57 +366,32 @@ AddEventHandler('esx:deleteVehicle', function(radius)
 	end
 end)
 
--- Pause menu disables HUD display
-if Config.EnableHud then
-	Citizen.CreateThread(function()
-		while true do
-			Citizen.Wait(300)
-
-			if IsPauseMenuActive() and not isPaused then
-				isPaused = true
-				ESX.UI.HUD.SetDisplay(0.0)
-			elseif not IsPauseMenuActive() and isPaused then
-				isPaused = false
-				ESX.UI.HUD.SetDisplay(1.0)
-			end
-		end
-	end)
-
-	AddEventHandler('esx:loadingScreenOff', function()
-		ESX.UI.HUD.SetDisplay(1.0)
-	end)
-end
-
 function StartServerSyncLoops()
 	-- keep track of ammo
-	Citizen.CreateThread(function()
+	CreateThread(function()
 		while true do
-			Citizen.Wait(5)
+			local playerPed = PlayerPedId()
 
-			if isDead then
-				Citizen.Wait(500)
-			else
-				local playerPed = PlayerPedId()
+			if IsPedShooting(playerPed) then
+				local _,weaponHash = GetCurrentPedWeapon(playerPed, true)
+				local weapon = ESX.GetWeaponFromHash(weaponHash)
 
-				if IsPedShooting(playerPed) then
-					local _,weaponHash = GetCurrentPedWeapon(playerPed, true)
-					local weapon = ESX.GetWeaponFromHash(weaponHash)
-
-					if weapon then
-						local ammoCount = GetAmmoInPedWeapon(playerPed, weaponHash)
-						TriggerServerEvent('esx:updateWeaponAmmo', weapon.name, ammoCount)
-					end
+				if weapon then
+					local ammoCount = GetAmmoInPedWeapon(playerPed, weaponHash)
+					TriggerServerEvent('esx:updateWeaponAmmo', weapon.name, ammoCount)
 				end
 			end
+
+			Wait(0)
 		end
 	end)
 
 	-- sync current player coords with server
-	Citizen.CreateThread(function()
+	CreateThread(function()
 		local previousCoords = vector3(ESX.PlayerData.coords.x, ESX.PlayerData.coords.y, ESX.PlayerData.coords.z)
 
 		while true do
-			Citizen.Wait(1000)
+			Wait(0)
 			local playerPed = PlayerPedId()
 
 			if DoesEntityExist(playerPed) then
@@ -434,69 +409,7 @@ function StartServerSyncLoops()
 	end)
 end
 
---[[ Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(0)
-
-		if IsControlJustReleased(0, 289) then
-			if IsInputDisabled(0) and not isDead and not ESX.UI.Menu.IsOpen('default', 'es_extended', 'inventory') then
-				ESX.ShowInventory()
-			end
-		end
-	end
-end)
-
--- Pickups
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(0)
-		local playerPed = PlayerPedId()
-		local playerCoords, letSleep = GetEntityCoords(playerPed), true
-		local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer(playerCoords)
-
-		for pickupId,pickup in pairs(pickups) do
-			local distance = #(playerCoords - pickup.coords)
-
-			if distance < 5 then
-				local label = pickup.label
-				letSleep = false
-
-				if distance < 1 then
-					if IsControlJustReleased(0, 38) then
-						if IsPedOnFoot(playerPed) and (closestDistance == -1 or closestDistance > 3) and not pickup.inRange then
-							pickup.inRange = true
-
-							local dict, anim = 'weapons@first_person@aim_rng@generic@projectile@sticky_bomb@', 'plant_floor'
-							ESX.Streaming.RequestAnimDict(dict)
-							TaskPlayAnim(playerPed, dict, anim, 8.0, 1.0, 1000, 16, 0.0, false, false, false)
-							Citizen.Wait(1000)
-
-							TriggerServerEvent('esx:onPickup', pickupId)
-							PlaySoundFrontend(-1, 'PICK_UP', 'HUD_FRONTEND_DEFAULT_SOUNDSET', false)
-						end
-					end
-
-					label = ('%s~n~%s'):format(label, _U('threw_pickup_prompt'))
-				end
-
-				ESX.Game.Utils.DrawText3D({
-					x = pickup.coords.x,
-					y = pickup.coords.y,
-					z = pickup.coords.z + 0.25
-				}, label, 1.2, 1)
-			elseif pickup.inRange then
-				pickup.inRange = false
-			end
-		end
-
-		if letSleep then
-			Citizen.Wait(500)
-		end
-	end
-end)]]
-
-RegisterNetEvent('esx:notify')
-AddEventHandler('esx:notify', function(message, type, title, time)
+RegisterNetEvent('esx:notify', function(message, type, title, time)
 	local message = message or ''
 	local type = type or 'info'
 	local title = title or 'Thông Báo'
